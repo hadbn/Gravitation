@@ -1,49 +1,60 @@
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
+import numpy as np
+from numpy import random
 fig, ax = plt.subplots()
 
-n=2
 G=1
-m=np.random.randint(1,5,(1,n))
-pos=np.random.randint(-5,6,(n,2))
-v= np.zeros((n,2))
 dt=0.01
-pos=np.concatenate(pos,v)
+n=10
 
 ax.axis('equal')
-#ax.set(xlim=[-1, 1000], ylim=[-1,1000])
-
-def d(P1,P2):
-    return (P1[0]-P2[0])**2 +(P1[1]**2 - P2[1]**2)
+ax.set(xlim=[-100, 100], ylim=[-100,100])
 
 
-#pos = [[0, 1000], [0,0]]
 
-def get_new_position(pos):
-    pos1 = pos[0][:, np.newaxis, :]
-    pos2 = pos[1][np.newaxis, :, :]
-    Diff = pos1-pos2
-    D= np.sum(np.square(Diff), axis=2)**3/2
-    F= np.dot(m, D)
+pos=np.random.randint(-5,6,(n,2))
+masses=np.random.randint(1,5,n)
+vitesse = np.zeros((n,2))
+# position=np.concatenate(pos,vitesses)
 
-    #return [[P[0]+1, P[1]-1], [V[0]+1, V[1]+1]]
+def get_new_position(pos,vitesse):
+    Pos1 = pos[:,np.newaxis,:]
+    Pos2 = pos[np.newaxis,:,:]
+    Diff= Pos1-Pos2
+    Dist=np.square(Diff)
+    Dist=np.sum(Dist, axis=2)
+    Dist=np.sqrt(Dist)
+    Dist[Dist == 0] = np.inf
+    F=masses[np.newaxis,:,np.newaxis]*Diff
+    F=F/(Dist[:,:,np.newaxis]**3)
+    F=np.nan_to_num(F)
+    A=-G*np.sum(F,axis=1)
 
-scat = ax.scatter(positions[0], positions[1])
+    pos=pos+dt*vitesse
+    vitesse=vitesse+dt*A
+    return (pos,vitesse)
+
+scat = ax.scatter(pos[:,0], pos[:,1])
 
 
 def animate(t):
     # une variable globale est une variable utilisée dans une fonction mais dont la modification de la valeur a une portée globale (donc extérieure à la fonction)
 
-    global positions
-    positions = get_new_position(positions)
+    global pos
+    global vitesse
+    pos,vitesse = get_new_position(pos,vitesse)
+
+    print("pos =", pos)
+    print("nombre de particules =", len(pos))
 
     # update the scatter plot:
     # le np.stack sert ici à mettre les positions dans la bonne shape
-    data = np.stack(positions).T
+    data = np.stack(pos).T
     scat.set_offsets(data)
     return scat
 
-ani = animation.FuncAnimation(fig=fig, func=animate, interval=100)
-#plt.show()
+ani = animation.FuncAnimation(fig=fig, func=animate, interval=100,cache_frame_data=False)
+plt.show()
 
 
